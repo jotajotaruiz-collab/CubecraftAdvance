@@ -1,0 +1,32 @@
+name: Compilar ROM GBA
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descomprimir proyecto.zip
+        run: |
+          mkdir proyecto
+          unzip -q proyecto.zip -d proyecto
+          ls proyecto
+
+      - name: Compilar con devkitARM (Docker)
+        run: |
+          docker run --rm -v "$PWD/proyecto:/w" -w /w devkitpro/devkitarm:latest sh -c '
+            export PATH="$PATH:/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin"
+            dkp-pacman -Sy --noconfirm gba-tools || true
+            make
+          '
+          ls -la proyecto/*.gba
+
+      - name: Guardar ROM
+        uses: actions/upload-artifact@v4
+        with:
+          name: cubicraft-gba
+          path: proyecto/cubicraft.gba
